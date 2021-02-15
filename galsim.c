@@ -28,8 +28,8 @@ double* calculate_F_i(int N, particle_t **particles, double* F_i, double G, int 
 void write_particles(particle_t **particles, int N, int n_steps);
 void step(int N, particle_t **p, double* F_i_x, double* F_i_y);
 
-float circleRadius=0.0015, circleColor=0;
-const int windowWidth=1000;
+float circle_radius=0.0015, circle_color=0;
+const int window_width=1000;
 
 int main(int argc, char *argv[])
 {
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
     double *F_i_y = calloc(N, sizeof(particle_t));
     if (is_graphics)
     {
-        InitializeGraphics(argv[0],windowWidth,windowWidth);
+        InitializeGraphics(argv[0], window_width, window_width);
         SetCAxes(0,1);
         int counter = 0;
         do
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
             step(N, p, F_i_x, F_i_y);
             for (size_t i = 0; i < N; i++)
             {
-                DrawCircle(p[i]->x, p[i]->y, L, W, circleRadius, circleColor);
+                DrawCircle(p[i]->x, p[i]->y, L, W, circle_radius, circle_color);
             }
             Refresh();
             usleep(30000);
@@ -223,7 +223,8 @@ particle_t** read_particles(int N, FILE* gal_file)
 void write_particles(particle_t **particles, int N, int n_steps)
 {
     FILE * out_file;
-    out_file = fopen("test_out.gal", "wb");
+
+    out_file = fopen("result.gal", "wb");
     for (size_t i = 0; i < N; i++)
     {
         fwrite(particles[i], sizeof(particle_t), 1, out_file);
