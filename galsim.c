@@ -3,9 +3,9 @@
 #include <math.h>
 #include <string.h>
 #include "graphics/graphics.h"
+#include "assert.h"
 
-
-#define EPSILON 0.01
+#define EPSILON 0.001
 #define DELTA_T 0.00001
 #define L 1
 #define W 1
@@ -28,7 +28,7 @@ double* calculate_F_i(int N, particle_t **particles, double* F_i, double G, int 
 void write_particles(particle_t **particles, int N, int n_steps);
 void step(int N, particle_t **p, double* F_i_x, double* F_i_y);
 
-float circle_radius=0.0015, circle_color=0;
+float circle_radius=0.00125, circle_color=0;
 const int window_width=1000;
 
 int main(int argc, char *argv[])
@@ -45,10 +45,9 @@ int main(int argc, char *argv[])
     int n_steps = atoi(argv[3]);
     double delta_t = atof(argv[4]);
     int is_graphics = atoi(argv[5]);
-    double G = 100/N;
-    // double epsilon = 1e-3;
-    // delta_t = 10e-5;
-    printf(" === Warning: delta_t, epsilon and G are set as constants.\n");
+    double G = 100.0/N;
+
+    printf(" === Warning: delta_t set as constant.\n");
     printf("%d %s %d %f %d\n", N, filename, n_steps, delta_t, is_graphics);
 
     // Open the file for reading.
@@ -93,7 +92,13 @@ int main(int argc, char *argv[])
             for (size_t i = 0; i < N; i++)
             {
                 // Draw all the particles on the screen.
-                DrawCircle(p[i]->x, p[i]->y, L, W, circle_radius, circle_color);
+                if (i%3 == 0) {
+                    DrawCircle(p[i]->x, p[i]->y, L, W, circle_radius, 0.8);
+                }
+                else if(i%7 == 0)
+                    DrawCircle(p[i]->x, p[i]->y, L, W, circle_radius, 0.6);
+                else
+                    DrawCircle(p[i]->x, p[i]->y, L, W, circle_radius, circle_color);
             }
             Refresh();
             usleep(3000);
@@ -133,7 +138,6 @@ void step(int N, particle_t **p, double* F_i_x, double* F_i_y)
     {
         // Updating velocities first, so that the position is then calculated
         // with v_{i+1}.
-
         // a_i = F_i / m
         // => v_{i+1} = v_i + dt * a_i
         p[i]->v_x += DELTA_T*(F_i_x[i] / p[i]->mass);
@@ -144,35 +148,36 @@ void step(int N, particle_t **p, double* F_i_x, double* F_i_y)
     }
 }
 
-double* calculate_F_i(int N, particle_t **particles, double* F_i, double G, int is_x)
+double* calculate_F_i(int N, particle_t **p, double* F_i, double G, int is_x)
 {
-    particle_t *p_i, *p_j;
+    // particle_t *p_i, *p_j;
     double r_ij, denominator, Gm_i, r_xy;
 
     for (size_t i = 0; i < N; i++)
     {
+        F_i[i] = 0;
         // For each particle.
-        p_i = particles[i];
-        Gm_i = (-G*(p_i->mass));
+        Gm_i = (-G*(p[i]->mass));
         for (size_t j = 0; j < N; j++)
         {
             // Calculate the force from the others, not counting oneself.
             if(i != j)
             {
-                p_j = particles[j];
                 // calculate r_ij.
-                r_ij = calculate_r_ij(p_i, p_j);
-                denominator = pow(r_ij + EPSILON, 3);
+                // r_ij = calculate_r_ij(p_i, p_j);
+                r_ij = sqrt((((p[i]->x) - (p[j]->x))*((p[i]->x) - (p[j]->x))) + (((p[i]->y) - (p[j]->y))*((p[i]->y) - (p[j]->y))));
+                // denominator = pow(r_ij + EPSILON, 3);
+                denominator = (r_ij + EPSILON)*(r_ij + EPSILON)*(r_ij + EPSILON);
                 // Which component to compute is the input of is_x.
                 if(is_x)
                 {
-                    r_xy = p_i->x - p_j->x;
+                    r_xy = p[i]->x - p[j]->x;
                 }
                 else
                 {
-                    r_xy = p_i->y - p_j->y;
+                    r_xy = p[i]->y - p[j]->y;
                 }
-                F_i[i] = (Gm_i * ((p_j->mass) / (denominator)))*r_xy;
+                F_i[i] += (Gm_i * ((p[j]->mass) / (denominator)))*r_xy;
             }
         }
     }

@@ -1,4 +1,6 @@
-CFLAGS=-O3
+# CFLAGS=-O3 	# improvement, speedup of ~3
+# CFLAGS=-Ofast # pretty good improvement!
+CFLAGS=-O3 -march=native -ffast-math # A little faster.
 DEBUGFLAGS=-Wall -ggdb3
 INCLUDES=-I/opt/X11/include
 LDFLAGS=-L/opt/X11/lib -lX11 -lm
