@@ -5,8 +5,8 @@
 #include "graphics/graphics.h"
 
 
-#define EPSILON 10e-3
-#define DELTA_T 10e-5
+#define EPSILON 0.01
+#define DELTA_T 0.00001
 #define L 1
 #define W 1
 
@@ -69,85 +69,76 @@ int main(int argc, char *argv[])
         printf("\nFile was not closed correctly.\n");
         exit(EXIT_FAILURE);
     }
-
+    // Zero-allocate two arrays for the forces on each particle.
+    // These will be updated for each time step of the simulation.
     double *F_i_x = calloc(N, sizeof(particle_t));
     double *F_i_y = calloc(N, sizeof(particle_t));
+
+    // Branching off for the graphics, this will not save output to file.
     if (is_graphics)
     {
         InitializeGraphics(argv[0], window_width, window_width);
         SetCAxes(0,1);
-        int counter = 0;
+        // int counter = 0;
         do
         {
-            counter++;
+            // counter++;
+            // For each step in the while loop, update the forces on each particle.
             F_i_x = calculate_F_i(N, p, F_i_x, G, 1);
             F_i_y = calculate_F_i(N, p, F_i_y, G, 0);
 
             ClearScreen();
-            // One step.
+            // Calculate one time step with the updated forces.
             step(N, p, F_i_x, F_i_y);
             for (size_t i = 0; i < N; i++)
             {
+                // Draw all the particles on the screen.
                 DrawCircle(p[i]->x, p[i]->y, L, W, circle_radius, circle_color);
             }
             Refresh();
-            usleep(30000);
-            if(counter + 1 == n_steps) printf("Passed n_steps\n");
-
+            usleep(3000);
         } while (!CheckForQuit() && is_graphics);
         FlushDisplay();
         CloseDisplay();
     }
+
+    // Branching for when no graphics are needed and when output needs to be
+    // saved to a file.
     if(!is_graphics)
     {
         // When graphics are turned off, no while-loop.
         for (size_t n = 0; n < n_steps; n++)
         {
+            // Calculate forces for time step n.
             F_i_x = calculate_F_i(N, p, F_i_x, G, 1);
             F_i_y = calculate_F_i(N, p, F_i_y, G, 0);
+
+            // Take a step.
             step(N, p, F_i_x, F_i_y);
         }
+        // Save particles to file.
         write_particles(p, N, n_steps);
-    /*
-    printf("\n");
-    printf("|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n");
-    printf("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV\n");
-        for (size_t j = 0; j < N; j++) {
-            printf("\nPARTICLE %ld\n\tx: %0.2f\t\ty: %0.2f\n\tx_vel: %0.2f\ty_vel: %0.2f\n\tmass: %0.2f\n\tbrightness %0.2f\n", j+1, p[j]->x, p[j]->y,  p[j]->v_x, p[j]->v_y, p[j]->mass, p[j]->brightness);
-        }
     }
-    */
-    // Put back when doing real sims?
-    // particle_t **particles_check = read_particles(N, strcat("ref_output_data/", gal_file));
-    }
+    // Freeing all the used memory.
     free(F_i_x);
     free(F_i_y);
     free_particles(N, p);
-    //free_particles(N, particles_check);
     return 0;
 }
 
 void step(int N, particle_t **p, double* F_i_x, double* F_i_y)
 {
+    // Updates each particle component-wise with the forces given by F_i_x and F_i_y.
     for (size_t i = 0; i < N; i++)
     {
-        /*
-        a_x = (F_i_x[i] / particles[i]->mass);
-        a_y = (F_i_y[i] / particles[i]->mass);
-        */
-        /*
-        for (size_t j = 0; j < N - 1; j++)
-        {
-            if(i != j)
-            {
-                F_x += (((-G* (p[i]->mass) * (p[j]->mass)) * (p[i]->x - p[j]->x) ) / (pow(sqrt((pow((p[i]->x) - (p[j]->x), 2) + pow((p[i]->y) - (p[j]->y), 2))) + EPSILON, 3)));
-                F_y += (((-G* (p[i]->mass) * (p[j]->mass)) * (p[i]->y - p[j]->y) ) / (pow(sqrt((pow((p[i]->x) - (p[j]->x), 2) + pow((p[i]->y) - (p[j]->y), 2))) + EPSILON, 3))) ;
-            }
-        }
-        */
+        // Updating velocities first, so that the position is then calculated
+        // with v_{i+1}.
+
+        // a_i = F_i / m
+        // => v_{i+1} = v_i + dt * a_i
         p[i]->v_x += DELTA_T*(F_i_x[i] / p[i]->mass);
         p[i]->v_y += DELTA_T*(F_i_y[i] / p[i]->mass);
-
+        // => x_{i+1} = x_i + dt * v_{i+1}
         p[i]->x += DELTA_T*(p[i]->v_x);
         p[i]->y += DELTA_T*(p[i]->v_y);
     }
@@ -157,12 +148,7 @@ double* calculate_F_i(int N, particle_t **particles, double* F_i, double G, int 
 {
     particle_t *p_i, *p_j;
     double r_ij, denominator, Gm_i, r_xy;
-    /*
-    if(is_x)
-        printf("X:\n");
-    else
-        printf("Y:\n");
-    */
+
     for (size_t i = 0; i < N; i++)
     {
         // For each particle.
@@ -176,7 +162,6 @@ double* calculate_F_i(int N, particle_t **particles, double* F_i, double G, int 
                 p_j = particles[j];
                 // calculate r_ij.
                 r_ij = calculate_r_ij(p_i, p_j);
-                // printf("\tr %ld -> %ld is %f\n", i + 1, j + 1, r_ij);
                 denominator = pow(r_ij + EPSILON, 3);
                 // Which component to compute is the input of is_x.
                 if(is_x)
@@ -187,8 +172,7 @@ double* calculate_F_i(int N, particle_t **particles, double* F_i, double G, int 
                 {
                     r_xy = p_i->y - p_j->y;
                 }
-                F_i[i] += (Gm_i * ((p_j->mass) / (denominator)))*r_xy;
-                // printf("P%ld: %0.2f N [P%ld]\n", i + 1, F_i[i], j + 1);
+                F_i[i] = (Gm_i * ((p_j->mass) / (denominator)))*r_xy;
             }
         }
     }
