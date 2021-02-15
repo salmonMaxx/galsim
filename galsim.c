@@ -92,9 +92,10 @@ int main(int argc, char *argv[])
             for (size_t i = 0; i < N; i++)
             {
                 // Draw all the particles on the screen.
-                if (i%3 == 0) {
+                // If:s just because it's really cool. Just changes some
+                // to a darker color for the cool effect.
+                if (i%3 == 0)
                     DrawCircle(p[i]->x, p[i]->y, L, W, circle_radius, 0.8);
-                }
                 else if(i%7 == 0)
                     DrawCircle(p[i]->x, p[i]->y, L, W, circle_radius, 0.6);
                 else
