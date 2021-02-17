@@ -6,9 +6,10 @@
 #include "assert.h"
 
 #define EPSILON 0.001
-#define DELTA_T 0.00001
 #define L 1
 #define W 1
+
+double delta_t;
 
 typedef struct particle
 {
@@ -20,7 +21,6 @@ typedef struct particle
     double brightness;
 } particle_t;
 
-
 particle_t** read_particles(int N, FILE* gal_file);
 void free_particles(int N, particle_t **particles);
 double calculate_r_ij(particle_t *p_i, particle_t *p_j);
@@ -28,7 +28,7 @@ double* calculate_F_i(int N, particle_t **particles, double* F_i, double G, int 
 void write_particles(particle_t **particles, int N, int n_steps);
 void step(int N, particle_t **p, double* F_i_x, double* F_i_y);
 
-float circle_radius=0.00125, circle_color=0;
+float circle_radius=1.5*0.00128, circle_color=0;
 const int window_width=1000;
 
 int main(int argc, char *argv[])
@@ -39,16 +39,15 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    // int L = 1, W = 1;
     int N = atoi(argv[1]);
     char* filename = argv[2];
     int n_steps = atoi(argv[3]);
-    double delta_t = atof(argv[4]);
+    delta_t = atof(argv[4]);
     int is_graphics = atoi(argv[5]);
-    double G = 100.0/N;
 
-    printf(" === Warning: delta_t set as constant.\n");
-    printf("%d %s %d %f %d\n", N, filename, n_steps, delta_t, is_graphics);
+    particle_t **p;
+    double G = 100.0/N, Gm_i, almost_f, r_ij, *F_i_x, *F_i_y;
+    int is_same;
 
     // Open the file for reading.
     FILE *gal_file = fopen(filename, "rb");
@@ -59,9 +58,8 @@ int main(int argc, char *argv[])
         printf("File was not opened correctly.\n");
         exit(EXIT_FAILURE);
     }
-
     // Read the initial state of the particles.
-    particle_t **p = read_particles(N, gal_file);
+    p = read_particles(N, gal_file);
     // And close now that the particles are stored in memory.
     if(fclose(gal_file))
     {
@@ -70,9 +68,8 @@ int main(int argc, char *argv[])
     }
     // Zero-allocate two arrays for the forces on each particle.
     // These will be updated for each time step of the simulation.
-    double *F_i_x = calloc(N, sizeof(particle_t));
-    double *F_i_y = calloc(N, sizeof(particle_t));
-
+    F_i_x = calloc(N, sizeof(particle_t));
+    F_i_y = calloc(N, sizeof(particle_t));
     // Branching off for the graphics, this will not save output to file.
     if (is_graphics)
     {
@@ -94,12 +91,15 @@ int main(int argc, char *argv[])
                 // Draw all the particles on the screen.
                 // If:s just because it's really cool. Just changes some
                 // to a darker color for the cool effect.
+                /*
                 if (i%3 == 0)
                     DrawCircle(p[i]->x, p[i]->y, L, W, circle_radius, 0.8);
                 else if(i%7 == 0)
                     DrawCircle(p[i]->x, p[i]->y, L, W, circle_radius, 0.6);
                 else
                     DrawCircle(p[i]->x, p[i]->y, L, W, circle_radius, circle_color);
+                */
+                DrawCircle(p[i]->x, p[i]->y, L, W, circle_radius, circle_color);
             }
             Refresh();
             usleep(3000);
@@ -116,9 +116,9 @@ int main(int argc, char *argv[])
         for (size_t n = 0; n < n_steps; n++)
         {
             // Calculate forces for time step n.
+
             F_i_x = calculate_F_i(N, p, F_i_x, G, 1);
             F_i_y = calculate_F_i(N, p, F_i_y, G, 0);
-
             // Take a step.
             step(N, p, F_i_x, F_i_y);
         }
@@ -141,11 +141,11 @@ void step(int N, particle_t **p, double* F_i_x, double* F_i_y)
         // with v_{i+1}.
         // a_i = F_i / m
         // => v_{i+1} = v_i + dt * a_i
-        p[i]->v_x += DELTA_T*(F_i_x[i] / p[i]->mass);
-        p[i]->v_y += DELTA_T*(F_i_y[i] / p[i]->mass);
+        p[i]->v_x += delta_t*(F_i_x[i] / p[i]->mass);
+        p[i]->v_y += delta_t*(F_i_y[i] / p[i]->mass);
         // => x_{i+1} = x_i + dt * v_{i+1}
-        p[i]->x += DELTA_T*(p[i]->v_x);
-        p[i]->y += DELTA_T*(p[i]->v_y);
+        p[i]->x += delta_t*(p[i]->v_x);
+        p[i]->y += delta_t*(p[i]->v_y);
     }
 }
 
@@ -203,7 +203,6 @@ particle_t** read_particles(int N, FILE* gal_file)
         fread(p, sizeof(particle_t), 1, gal_file);
         if(!feof(gal_file))
         {
-            // printf("\nPARTICLE %ld\n\tx: %0.2f\t\ty: %0.2f\n\tx_vel: %0.2f\ty_vel: %0.2f\n\tmass: %0.2f\n\tbrightness %0.2f\n", i+1, p->x, p->y,  p->v_x, p->v_y, p->mass, p->brightness);
             particles[i] = p;
         }
     }
