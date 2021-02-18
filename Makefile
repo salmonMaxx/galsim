@@ -1,5 +1,5 @@
 # CFLAGS=-O3 	# improvement, speedup of ~3
-# CFLAGS=-Ofast # pretty good improvement!
+CFLAGS2=-Ofast # pretty good improvement!
 CFLAGS=-O3 -march=native -ffast-math # A little faster.
 DEBUGFLAGS=-Wall -ggdb3
 INCLUDES=-I/opt/X11/include
@@ -12,7 +12,7 @@ debug: graphics.o galsim.c
 	gcc $(DEBUGFLAGS) -o galsim galsim.c graphics.o $(LDFLAGS)
 
 galsim_2: graphics.o galsim.c
-	gcc $(CFLAGS) -o galsim_2 galsim.c graphics.o $(LDFLAGS)
+	gcc $(CFLAGS2) -o galsim_2 galsim.c graphics.o $(LDFLAGS)
 
 graphics.o: graphics/graphics.c graphics/graphics.h
 	gcc $(CFLAGS) $(INCLUDES) -c graphics/graphics.c
