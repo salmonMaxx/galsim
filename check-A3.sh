@@ -66,13 +66,13 @@ echo Checking that running galsim executable works
 
 echo Checking that result.gal file was created
 ls -l result.gal || exit 1
-
+echo At: $(pwd) trying to go to ../../compare_gal_file/compare.c
 echo Compiling compare_gal_files program
-gcc -o compare_gal_files ../../compare_gal_files/compare_gal_files.c -lm || exit 1
-ls -l compare_gal_files || exit 1
+gcc -o compare_gal_file ../../compare_gal_files/compare_gal_files.c -lm || exit 1
+ls -l compare_gal_file || exit 1
 
 echo Using compare_gal_files program to check result.gal file
-./compare_gal_files 10 result.gal ../../ref_output_data/ellipse_N_00010_after200steps.gal > tmp.txt || exit 1
+./compare_gal_file 10 result.gal ../../ref_output_data/ellipse_N_00010_after200steps.gal > tmp.txt || exit 1
 cat tmp.txt
 grep pos_maxdiff tmp.txt | grep 00000000 || exit 1
 
